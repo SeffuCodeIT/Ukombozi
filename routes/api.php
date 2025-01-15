@@ -17,3 +17,6 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+Route::post('/c2bCallback', [\App\Http\Controllers\PaymentController::class, 'c2bCallback']);
+
+Route::get('/pesapalIPN', [\App\Http\Controllers\PaymentController::class, 'pesapalIPN'])->name('pesapalIPN');

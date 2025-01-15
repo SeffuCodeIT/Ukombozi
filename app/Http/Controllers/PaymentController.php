@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Payment;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Safaricom\Mpesa\Mpesa;
-class PaymentController extends Controller
+class   PaymentController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -16,6 +17,59 @@ class PaymentController extends Controller
     {
         //
     }
+    public function pesapalAccessToken(Request $request)
+    {
+        $payment = new Payment();
+        return $payment->pesapalAccessToken();
+    }
+
+    public function registerPesapalIPN(Request $request)
+    {
+        $payment = new Payment();
+        return $payment->registerPesapalIPN();
+    }
+
+    public function pesapalIPN()
+    {
+        header("Content-Type: application/json");
+        $pinCallbackResponse = file_get_contents('php://input');
+        $logFile = "pesapalCallback.json";
+        $log = fopen($logFile, "a");
+        fwrite($log, $pinCallbackResponse);
+        fclose($log);
+    }
+
+    public function getRegisteredIPNs(Request $request)
+    {
+        $payment = new Payment();
+        return $payment->getRegisteredIPNs();
+    }
+
+    public function submitOrderRequest(Request $request)
+    {
+        $payment = new Payment();
+        $order = $payment->submitOrderRequest($request->all());
+        $order = json_decode($order, true);
+        return redirect($order["redirect_url"]);
+    }
+
+    public function paymentSuccess(Request $request)
+    {
+        $payment = new Payment();
+        return $payment->getTransactionStatus($request);
+    }
+
+    public function refundRequest()
+    {
+        $payment = new Payment();
+        return $payment->refundRequest();
+    }
+    public function orderCancellation()
+    {
+        $payment = new Payment();
+        return $payment->orderCancellation();
+    }
+
 //    public function stk(Request $request)
 //    {
 //        // Validate the request
@@ -106,6 +160,8 @@ class PaymentController extends Controller
 //    }
     public function stkPush(Request $request)
     {
+        // Log the incoming payment request
+        Log::info('Received payment request:', $request->all());
         // Validate the request
         $request->validate([
             'first_name' => 'required|string|max:255',
@@ -122,13 +178,13 @@ class PaymentController extends Controller
 
         $BusinessShortCode = '174379';
         $LipaNaMpesaPasskey = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
-        $Timestamp = date('Y-m-d H:i:s');
-        $TransactionType = 'CustomerBuyGoodsOnline';
+//        $Timestamp = date('Y-m-d H:i:s');
+        $TransactionType = 'CustomerPayBillOnline';
         $Amount = $request->total;
         $PartyA = $request->phone; // Customer's phone number
         $PartyB = $BusinessShortCode; // M-Pesa Shortcode
         $PhoneNumber = $request->phone;
-        $CallBackURL = 'https://8e5e-102-5-152-68.ngrok-free.app/mpesa/callback'; // Replace with your actual callback route
+        $CallBackURL = 'https://5171-102-0-208-65.ngrok-free.app/api/c2bCallback'; // Replace with your actual callback route
         $AccountReference = 'Order_' . time(); // Unique order reference
         $TransactionDesc = 'Payment for Order';
         $Remarks = 'Payment for Order #' . $AccountReference;
@@ -138,7 +194,7 @@ class PaymentController extends Controller
         $stkPushSimulation = $mpesa->STKPushSimulation(
             $BusinessShortCode,
             $LipaNaMpesaPasskey,
-            $Timestamp,
+//            $Timestamp,
             $TransactionType,
             $Amount,
             $PartyA,
@@ -149,10 +205,12 @@ class PaymentController extends Controller
             $TransactionDesc,
             $Remarks
         );
-        dd($stkPushSimulation);
+//        dd($stkPushSimulation);
 
         $stkPushSimulation = json_decode($stkPushSimulation, true); // Decodes to an associative array
 
+        // Log the response from the STK Push API
+        Log::info('STK Push Response: ', (array) $stkPushSimulation);
         if (isset($stkPushSimulation) && $stkPushSimulation['ResponseCode'] == '0') {
             // Payment initiation was successful; save order details
             $order = new Payment();
@@ -179,38 +237,260 @@ class PaymentController extends Controller
     }
 
 
-    public function stk()
+    public function c2bCallback()
     {
-        //
-        $mpesa= new \Safaricom\Mpesa\Mpesa();
+        $callbackJSONData = file_get_contents('php://input');
 
-           $BusinessShortCode = '174379';
-           $LipaNaMpesaPasskey = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
-           $Timestamp = "20160216165627";
-           $TransactionType = "CustomerPayBillOnline";
-           $Amount = "1";
-           $PartyA = "254708441307";
-           $PartyB = "174379";
-           $PhoneNumber = "254708441307";
-           $CallBackURL = "http://192.168.43.241:8000/mpesa/callback";
-           $AccountReference = "AccountReference";
-           $TransactionDesc = "TransactionDesc";
-           $Remarks = 'Remarks';
+        // Log the received callback JSON
+        Log::info('Received STK Callback: ' . $callbackJSONData);
 
-        $stkPushSimulation=$mpesa->STKPushSimulation(
-            $BusinessShortCode,
-            $LipaNaMpesaPasskey,
-            $TransactionType,
-            $Amount,
-            $PartyA,
-            $PartyB,
-            $PhoneNumber,
-            $CallBackURL,
-            $AccountReference,
-            $TransactionDesc,
-            $Remarks);
-        dd($stkPushSimulation);
+        $jsonFile = fopen('c2bCallback.json', 'w');
+        fwrite($jsonFile, $callbackJSONData);
+
+        $json = json_decode($callbackJSONData);
+
+        // Log if the JSON structure is not as expected
+        if (!isset($json->Body->stkCallback)) {
+            Log::error('Invalid STK Callback JSON structure: ' . $callbackJSONData);
+            return response()->json(['ResultCode' => 1, 'ResultDesc' => 'Invalid Request']);
+        }
+
+        $CheckoutRequestID = $json->Body->stkCallback->CheckoutRequestID;
+        $ResultCode = $json->Body->stkCallback->ResultCode;
+        $CallbackMetadata = $json->Body->stkCallback->CallbackMetadata;
+
+        $Amount = 0;
+        $MpesaReceiptNumber = "";
+        $PhoneNumber = "";
+        $TransactionDate = "";
+
+        foreach ($CallbackMetadata->Item as $item) {
+            if ($item->Name == "Amount") {
+                $Amount = $item->Value;
+            } else if ($item->Name == "MpesaReceiptNumber") {
+                $MpesaReceiptNumber = $item->Value;
+            } else if ($item->Name == "PhoneNumber") {
+                $PhoneNumber = $item->Value;
+            } else if ($item->Name == "TransactionDate") {
+                $TransactionDate = $item->Value;
+            }
+        }
+
+        // Log the parsed callback details
+        Log::info("STK Callback Parsed: CheckoutRequestID=$CheckoutRequestID, ResultCode=$ResultCode, Amount=$Amount, MpesaReceiptNumber=$MpesaReceiptNumber, PhoneNumber=$PhoneNumber, TransactionDate=$TransactionDate");
+
+        // Save to the database or handle the logic based on ResultCode
+
+        return response()->json(['ResultCode' => 0, 'ResultDesc' => 'Callback received successfully']);
     }
+
+
+
+//    public function stk()
+//    {
+//        //
+//        $mpesa= new \Safaricom\Mpesa\Mpesa();
+//
+//           $BusinessShortCode = '174379';
+//           $LipaNaMpesaPasskey = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
+//           $Timestamp = "20160216165627";
+//           $TransactionType = "CustomerPayBillOnline";
+//           $Amount = "1";
+//           $PartyA = "254708441307";
+//           $PartyB = "174379";
+//           $PhoneNumber = "254708441307";
+//           $CallBackURL = "http://192.168.43.241:8000/mpesa/callback";
+//           $AccountReference = "AccountReference";
+//           $TransactionDesc = "TransactionDesc";
+//           $Remarks = 'Remarks';
+//
+//        $stkPushSimulation=$mpesa->STKPushSimulation(
+//            $BusinessShortCode,
+//            $LipaNaMpesaPasskey,
+//            $TransactionType,
+//            $Amount,
+//            $PartyA,
+//            $PartyB,
+//            $PhoneNumber,
+//            $CallBackURL,
+//            $AccountReference,
+//            $TransactionDesc,
+//            $Remarks);
+//        dd($stkPushSimulation);
+//    }
+//    public function c2bCallgback()
+//    {
+//        // Get the callback JSON data from M-Pesa
+//        $callBackJSONData = file_get_contents('php://input');
+//        file_put_contents('mpesa_callback_log.txt', $callBackJSONData);
+//        $callbackData = json_decode($callBackJSONData, true); // Convert JSON string to an associative array
+//
+//        // Check if stkCallback exists in the received data
+//        if (isset($callbackData['Body']['stkCallback'])) {
+//            $stkCallback = $callbackData['Body']['stkCallback'];
+//
+//            // Extract necessary fields from the callback
+//            $checkoutRequestID = $stkCallback['CheckoutRequestID']; // Unique ID for the transaction
+//            $resultCode = $stkCallback['ResultCode']; // Indicates whether the transaction was successful or not
+//            $resultDesc = $stkCallback['ResultDesc']; // Description of the result (success or failure)
+//
+//            // Initialize variables
+//            $mpesaReceiptNumber = null;
+//            $transactionDate = null;
+//            $amount = null;
+//            $phoneNumber = null;
+//
+//            // If the result code is 0, it means the transaction was successful
+//            if ($resultCode == 0 && isset($stkCallback['CallbackMetadata']['Item'])) {
+//                // Loop through the Item array to get necessary fields
+//                foreach ($stkCallback['CallbackMetadata']['Item'] as $item) {
+//                    if ($item['Name'] == 'MpesaReceiptNumber') {
+//                        $mpesaReceiptNumber = $item['Value'];
+//                    }
+//                    if ($item['Name'] == 'TransactionDate') {
+//                        // Convert the TransactionDate to a readable format
+//                        $transactionDate = \Carbon\Carbon::parse($item['Value'])->format('Y-m-d H:i:s');
+//                    }
+//                    if ($item['Name'] == 'Amount') {
+//                        $amount = $item['Value'];
+//                    }
+//                    if ($item['Name'] == 'PhoneNumber') {
+//                        $phoneNumber = $item['Value'];
+//                    }
+//                }
+//
+//                // Update the payment in the database
+//                $payment = Payment::where('payment_id', $checkoutRequestID)->first();
+//                if ($payment) {
+//                    // Update the payment record
+//                    $payment->payment_status = 'complete'; // Mark payment as complete
+//                    $payment->mpesa_receipt_number = $mpesaReceiptNumber;
+//                    $payment->payment_date = $transactionDate;
+//                    $payment->save();
+//                }
+//
+//            } else {
+//                // Transaction failed, handle the failure case
+//                $failureReason = $resultDesc; // Reason for failure
+//
+//                // Update the payment in the database
+//                $payment = Payment::where('payment_id', $checkoutRequestID)->first();
+//                if ($payment) {
+//                    // Update the payment record
+//                    $payment->payment_status = 'failed'; // Mark payment as failed
+//                    $payment->failure_reason = $failureReason;
+//                    $payment->save();
+//                }
+//            }
+//
+//            // Return a success response to M-Pesa
+//            return response()->json(['status' => 'success'], 200);
+//        } else {
+//            // Return an error response if the callback data is not in the expected format
+//            return response()->json(['error' => 'Invalid callback data'], 400);
+//        }
+//    }
+
+//    public function c2bCallbackSeffu()
+//    {
+//        $callbackJSONData = file_get_contents('php://input');
+////
+//        $jsonFile = fopen('c2bCallback.json', 'w');
+//        fwrite($jsonFile, $callbackJSONData);
+//
+//        $json = json_decode($callbackJSONData);
+////
+//        // Extract the CheckoutRequestID and ResultCode
+//        $CheckoutRequestID = $json->Body->stkCallback->CheckoutRequestID;
+//        $ResultCode = $json->Body->stkCallback->ResultCode;
+//        $CallbackMetadata = $json->Body->stkCallback->CallbackMetadata;
+//
+//        $Amount = 0;
+//        $MpesaReceiptNumber = "";
+//        $PhoneNumber = "";
+//        $TransactionDate = "";
+//
+//        foreach ($CallbackMetadata->Item as $item) {
+//
+//            if ($item->Name == "Amount") {
+//                $Amount = $item->Value;
+//            } else if ($item->Name == "MpesaReceiptNumber") {
+//                $MpesaReceiptNumber = $item->Value;
+//            } else if ($item->Name == "PhoneNumber") {
+//                $PhoneNumber = $item->Value;
+//            } else if ($item->Name == "TransactionDate") {
+//                $TransactionDate = $item->Value;
+//            }
+//        }
+//
+//        // Check if the payment was successful (ResultCode 0 indicates success)
+//        if ($ResultCode == 0) {
+//            // Find the payment by CheckoutRequestID and update the status to 'completed'
+//            $payment = Payment::where('payment_id', $CheckoutRequestID)->first();
+//
+//            if ($payment) {
+//                $payment->payment_status = 'completed';
+//                $payment->mpesa_receipt_number = $CheckoutRequestID;
+//                $payment->transaction_date = Carbon::parse($TransactionDate)->format('Y-m-d H:i:s');
+//                // Log successful payment update
+//                Log::info('Payment confirmed successfully. Updated payment status for payment ID: ' . $CheckoutRequestID);
+//            } else {
+//                $payment->payment_status = 'failed';
+//                $payment->save();
+//                // Log missing payment record
+//                Log::error('Payment record not found for CheckoutRequestID: ' . $CheckoutRequestID);
+//            }
+//        } else {
+//
+////            $ResultCode = $json->Body->stkCallback->ResultCode;
+//
+//
+//
+//            // Log failed payment or error response
+//            Log::error('Payment failed with ResultCode: ' . $ResultCode );
+//        }
+//
+//        // Optionally, you can send a response back to confirm receipt of the callback
+////        return response()->json(['status' => 'success']);
+//
+//        return true;
+//
+//    }
+
+
+//public function c2bCallback()
+//{
+//    $callbackJSONData = file_get_contents('php://input');
+//
+//    $jsonFile = fopen('c2bCallback.json', 'w');
+//    fwrite($jsonFile, $callbackJSONData);
+//
+//    $json = json_decode($callbackJSONData);
+//
+//    $CheckoutRequestID = $json->Body->stkCallback->CheckoutRequestID;
+//    $ResultCode = $json->Body->stkCallback->ResultCode;
+//    $CallbackMetadata = $json->Body->stkCallback->CallbackMetadata;
+//
+//    $Amount = 0;
+//    $MpesaReceiptNumber = "";
+//    $PhoneNumber = "";
+//    $TransactionDate = "";
+//    foreach ($CallbackMetadata->Item as $item) {
+//
+//        if ($item->Name == "Amount") {
+//            $Amount = $item->Value;
+//        } else if ($item->Name == "MpesaReceiptNumber") {
+//            $MpesaReceiptNumber = $item->Value;
+//        } else if ($item->Name == "PhoneNumber") {
+//            $PhoneNumber = $item->Value;
+//        } else if ($item->Name == "TransactionDate") {
+//            $TransactionDate = $item->Value;
+//        }
+//    }
+//
+//    return true;
+//}
+
 
 // public function stkPush(Request $request)
 //    {
@@ -461,49 +741,107 @@ class PaymentController extends Controller
 
 
 
-    public function mpesaCallback(Request $request)
-    {
-        $mpesa = new \Safaricom\Mpesa\Mpesa();
+//    public function c2bCallback()
+//    {
+//        $callBackJSONData = file_get_contents('php://input');
+//        $jsonFile = fopen('c2bCallback.json', 'w');
+//        fwrite($jsonFile, $callBackJSONData) ;
+//        return true;
+//
+//
+//
+////        dd('it worked');
+//
+//
+//
+//        $mpesa = new \Safaricom\Mpesa\Mpesa();
+//
+//        // Retrieve the callback data from M-Pesa
+//        $callbackData = $mpesa->getDataFromCallback();
+//
+//        // Log the callback data to inspect its structure
+//        Log::info('M-Pesa Callback Data: ' . json_encode($callbackData));
+//
+//        // Uncomment the line below to see the data directly in your response (for debugging)
+//        // dd($callbackData); // This will dump the data and stop further execution
+//
+//        // Check if 'Body' and necessary keys exist in the response before accessing them
+//        if (isset($callbackData['Body']['stkCallback']['ResultCode'])) {
+//            $resultCode = $callbackData['Body']['stkCallback']['ResultCode'];
+//            $checkoutRequestID = $callbackData['Body']['stkCallback']['CheckoutRequestID'];
+//
+//            if ($resultCode == 0) {
+//                // Payment successful, update the payment status
+//                $payment = Payment::where('payment_id', $checkoutRequestID)->first();
+//                if ($payment) {
+//                    $payment->payment_status = 'completed';
+//                    $payment->save();
+//                }
+//            } else {
+//                // Payment failed, update the payment status
+//                $payment = Payment::where('payment_id', $checkoutRequestID)->first();
+//                if ($payment) {
+//                    $payment->payment_status = 'failed';
+//                    $payment->save();
+//                }
+//            }
+//        } else {
+//            // Log the callback data if the expected fields are missing
+//            Log::error('M-Pesa callback data missing required fields: ' . json_encode($callbackData));
+//
+//            // Return an error response to the client for debugging purposes
+//            return response()->json(['error' => 'Invalid callback data', 'data' => $callbackData], 400);
+//        }
+//
+//        return response()->json(['status' => 'success'], 200);
+//    }
+//    public function c2bCallback()
+//    {
+//        $callBackJSONData = file_get_contents('php://input');
+//        $jsonFile = fopen('c2bcallback.json', 'w');
+//        fwrite($jsonFile, $callBackJSONData);
+//        return true;
+////        $callbackData = json_decode($callBackJSONData, true);
+//
+//        // Extract necessary data
+//        $checkoutRequestID = $callbackData['Body']['stkCallback']['CheckoutRequestID'];
+//        $resultCode = $callbackData['Body']['stkCallback']['ResultCode'];
+//        $resultDesc = $callbackData['Body']['stkCallback']['ResultDesc'];
+//
+//        // Check if the transaction was successful
+//        if ($resultCode == 0) {
+//            $mpesaReceiptNumber = $callbackData['Body']['stkCallback']['CallbackMetadata']['Item'][1]['Value'];
+//            $transactionDate = $callbackData['Body']['stkCallback']['CallbackMetadata']['Item'][3]['Value'];
+//            $phoneNumber = $callbackData['Body']['stkCallback']['CallbackMetadata']['Item'][4]['Value'];
+//
+//            // Find the corresponding payment
+//            $payment = Payment::where('payment_id', $checkoutRequestID)->first();
+//
+//            if ($payment) {
+//                // Update the payment status and additional details
+//                $payment->update([
+//                    'payment_status' => 'completed',
+//                    'mpesa_receipt_number' => $mpesaReceiptNumber,
+//                    'payment_date' => Carbon::createFromFormat('YmdHis', $transactionDate),
+//                ]);
+//            }
+//        } else {
+//            // Handle failed transactions
+//            $payment = Payment::where('payment_id', $checkoutRequestID)->first();
+//            if ($payment) {
+//                $payment->update([
+//                    'payment_status' => 'failed',
+//                    'failure_reason' => $resultDesc,
+//                ]);
+//            }
+//        }
+//
+//        // Log the callback data for debugging
+//        file_put_contents(storage_path('logs/c2bCallback.log'), json_encode($callbackData));
+//
+//        return response()->json(['status' => 'ok'], 200);
+//    }
 
-        // Retrieve the callback data from M-Pesa
-        $callbackData = $mpesa->getDataFromCallback();
-
-        // Log the callback data to inspect its structure
-        Log::info('M-Pesa Callback Data: ' . json_encode($callbackData));
-
-        // Uncomment the line below to see the data directly in your response (for debugging)
-        // dd($callbackData); // This will dump the data and stop further execution
-
-        // Check if 'Body' and necessary keys exist in the response before accessing them
-        if (isset($callbackData['Body']['stkCallback']['ResultCode'])) {
-            $resultCode = $callbackData['Body']['stkCallback']['ResultCode'];
-            $checkoutRequestID = $callbackData['Body']['stkCallback']['CheckoutRequestID'];
-
-            if ($resultCode == 0) {
-                // Payment successful, update the payment status
-                $payment = Payment::where('payment_id', $checkoutRequestID)->first();
-                if ($payment) {
-                    $payment->payment_status = 'completed';
-                    $payment->save();
-                }
-            } else {
-                // Payment failed, update the payment status
-                $payment = Payment::where('payment_id', $checkoutRequestID)->first();
-                if ($payment) {
-                    $payment->payment_status = 'failed';
-                    $payment->save();
-                }
-            }
-        } else {
-            // Log the callback data if the expected fields are missing
-            Log::error('M-Pesa callback data missing required fields: ' . json_encode($callbackData));
-
-            // Return an error response to the client for debugging purposes
-            return response()->json(['error' => 'Invalid callback data', 'data' => $callbackData], 400);
-        }
-
-        return response()->json(['status' => 'success'], 200);
-    }
 
 //    public function checkStkPushStatus($checkoutRequestID)
 //    {

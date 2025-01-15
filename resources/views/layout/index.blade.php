@@ -24,16 +24,16 @@
     <meta name="msapplication-TileColor" content="#cc9966">
     <meta name="msapplication-config" content="assets/images/icons/browserconfig.xml">
     <meta name="theme-color" content="#ffffff">
-    <link rel="stylesheet" href="{{asset("assets/vendor/line-awesome/line-awesome/line-awesome/css/line-awesome.min.css")}}">
+    <link rel="stylesheet" href="{{secure_asset("assets/vendor/line-awesome/line-awesome/line-awesome/css/line-awesome.min.css")}}">
     <!-- Plugins CSS File -->
-    <link rel="stylesheet" href="{{asset("assets/css/bootstrap.min.css")}}">
-    <link rel="stylesheet" href="{{asset("assets/css/plugins/owl-carousel/owl.carousel.css")}}">
-    <link rel="stylesheet" href="{{asset("assets/css/plugins/magnific-popup/magnific-popup.css")}}">
-    <link rel="stylesheet" href="{{asset("assets/css/plugins/jquery.countdown.css")}}">
+    <link rel="stylesheet" href="{{secure_asset("assets/css/bootstrap.min.css")}}">
+    <link rel="stylesheet" href="{{secure_asset("assets/css/plugins/owl-carousel/owl.carousel.css")}}">
+    <link rel="stylesheet" href="{{secure_asset("assets/css/plugins/magnific-popup/magnific-popup.css")}}">
+    <link rel="stylesheet" href="{{secure_asset("assets/css/plugins/jquery.countdown.css")}}">
     <!-- Main CSS File -->
-    <link rel="stylesheet" href="{{asset("assets/css/style.css")}}">
-    <link rel="stylesheet" href="{{asset("assets/css/skins/skin-demo-2.css")}}">
-    <link rel="stylesheet" href="{{asset("assets/css/demos/demo-2.css")}}">
+    <link rel="stylesheet" href="{{secure_asset("assets/css/style.css")}}">
+    <link rel="stylesheet" href="{{secure_asset("assets/css/skins/skin-demo-2.css")}}">
+    <link rel="stylesheet" href="{{secure_asset("assets/css/demos/demo-2.css")}}">
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
@@ -925,18 +925,18 @@
 {{--</div>--}}
 
 <!-- Plugins JS File -->
-<script src="{{asset("assets/js/jquery.min.js")}}"></script>
-<script src="{{asset("assets/js/bootstrap.bundle.min.js")}}"></script>
-<script src="{{asset("assets/js/jquery.hoverIntent.min.js")}}"></script>
-<script src="{{asset("assets/js/jquery.waypoints.min.js")}}"></script>
-<script src="{{asset("assets/js/superfish.min.js")}}"></script>
-<script src="{{asset("assets/js/owl.carousel.min.js")}}"></script>
-<script src="{{asset("assets/js/jquery.plugin.min.js")}}"></script>
-<script src="{{asset("assets/js/jquery.magnific-popup.min.js")}}"></script>
-<script src="{{asset("assets/js/jquery.countdown.min.js")}}"></script>
+<script src="{{secure_asset("assets/js/jquery.min.js")}}"></script>
+<script src="{{secure_asset("assets/js/bootstrap.bundle.min.js")}}"></script>
+<script src="{{secure_asset("assets/js/jquery.hoverIntent.min.js")}}"></script>
+<script src="{{secure_asset("assets/js/jquery.waypoints.min.js")}}"></script>
+<script src="{{secure_asset("assets/js/superfish.min.js")}}"></script>
+<script src="{{secure_asset("assets/js/owl.carousel.min.js")}}"></script>
+<script src="{{secure_asset("assets/js/jquery.plugin.min.js")}}"></script>
+<script src="{{secure_asset("assets/js/jquery.magnific-popup.min.js")}}"></script>
+<script src="{{secure_asset("assets/js/jquery.countdown.min.js")}}"></script>
 <!-- Main JS File -->
-<script src="{{asset("assets/js/main.js")}}"></script>
-<script src="{{asset("assets/js/demos/demo-2.js")}}"></script>
+<script src="{{secure_asset("assets/js/main.js")}}"></script>
+<script src="{{secure_asset("assets/js/demos/demo-2.js")}}"></script>
 @livewireScripts
 </body>
 

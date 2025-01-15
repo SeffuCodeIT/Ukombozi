@@ -47,7 +47,7 @@
                             <label for="checkout-discount-input" class="text-truncate">Have a coupon? <span>Click here to enter your code</span></label>
                         </form>
                     </div><!-- End .checkout-discount -->
-                    <form action="{{url("payment")}}" method="POST">
+                    <form action="{{url("submitOrderRequest")}}" method="POST">
                         @csrf
                         <div class="row">
                             <div class="col-lg-9">

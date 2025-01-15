@@ -31,8 +31,7 @@ Route::delete('removeItem/{id}', [\App\Http\Controllers\BooksController::class, 
 Route::any('cart/update', [\App\Http\Controllers\BooksController::class, 'updateCart'])->name('cart.update');
 Route::any('/checkout', [\App\Http\Controllers\BooksController::class, 'checkout'])->name('checkout');
 //Route::post('/payment', [\App\Http\Controllers\BooksController::class, 'payment'])->name('payment');
-Route::any('/payment', [\App\Http\Controllers\PaymentController::class, 'stk'])->name('stk');
-Route::any('/mpesa/callback', [\App\Http\Controllers\PaymentController::class, 'mpesaCallback'])->name('mpesaCallback');
+Route::any('/payment', [\App\Http\Controllers\PaymentController::class, 'stkPush'])->name('stkPush');
 //Route::any('/mpesa/callback', [\App\Http\Controllers\PaymentController::class, 'checkStkPushStatus'])->name('checkStkPushStatus');
 // routes/web.php
 
@@ -56,3 +55,11 @@ Route::get('/clear-cache', function () {
     Artisan::call('view:clear');
     return "Cache cleared!";
 });
+
+Route::get('/pesapalAccessToken', [\App\Http\Controllers\PaymentController::class, 'pesapalAccessToken'])->name('pesapalAccessToken');
+Route::get('/registerPesapalIPN', [\App\Http\Controllers\PaymentController::class, 'registerPesapalIPN'])->name('registerPesapalIPN');
+Route::get('/getRegisteredIPNs', [\App\Http\Controllers\PaymentController::class, 'getRegisteredIPNs'])->name('getRegisteredIPNs');
+Route::any('/submitOrderRequest', [\App\Http\Controllers\PaymentController::class, 'submitOrderRequest'])->name('submitOrderRequest');
+Route::any('/success', [\App\Http\Controllers\PaymentController::class, 'paymentSuccess'])->name('paymentSuccess');
+Route::get('/refundRequest', [\App\Http\Controllers\PaymentController::class, 'refundRequest'])->name('refundRequest');
+Route::get('/orderCancellation', [\App\Http\Controllers\PaymentController::class, 'orderCancellation'])->name('orderCancellation');
