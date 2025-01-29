@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,9 +19,7 @@ Route::get('/', function () {
     return view('main.home');
 });
 
-Route::get('/admin', [\App\Http\Controllers\IndexController::class, 'admin'])->name('admin');
-Route::post('/category', [\App\Http\Controllers\BooksController::class, 'category'])->name('category');
-Route::post('/save-book', [\App\Http\Controllers\BooksController::class, 'store'])->name('store');
+
 Route::get('/shop', [\App\Http\Controllers\IndexController::class, 'shop'])->name('shop');
 Route::get('/about', [\App\Http\Controllers\IndexController::class, 'about'])->name('about');
 Route::get('/contact', [\App\Http\Controllers\IndexController::class, 'contact'])->name('contact');
@@ -35,7 +34,7 @@ Route::any('/payment', [\App\Http\Controllers\PaymentController::class, 'stkPush
 //Route::any('/mpesa/callback', [\App\Http\Controllers\PaymentController::class, 'checkStkPushStatus'])->name('checkStkPushStatus');
 // routes/web.php
 
-Route::get('/mpesa/check-status', [\App\Http\Controllers\PaymentController::class, 'checkStkPushStatus']);
+//Route::get('/mpesa/check-status', [\App\Http\Controllers\PaymentController::class, 'checkStkPushStatus']);
 
 
 Route::middleware([
@@ -63,3 +62,11 @@ Route::any('/submitOrderRequest', [\App\Http\Controllers\PaymentController::clas
 Route::any('/success', [\App\Http\Controllers\PaymentController::class, 'paymentSuccess'])->name('paymentSuccess');
 Route::get('/refundRequest', [\App\Http\Controllers\PaymentController::class, 'refundRequest'])->name('refundRequest');
 Route::get('/orderCancellation', [\App\Http\Controllers\PaymentController::class, 'orderCancellation'])->name('orderCancellation');
+
+
+Route::prefix('admin')->middleware(['auth', 'isAdmin'])->group(function () {
+    Route::get('/admin', [\App\Http\Controllers\IndexController::class, 'admin'])->name('admin');
+    Route::post('/category', [\App\Http\Controllers\BooksController::class, 'category'])->name('category');
+    Route::post('/save-book', [\App\Http\Controllers\BooksController::class, 'store'])->name('store');
+});
+//Auth::routes();

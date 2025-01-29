@@ -8817,7 +8817,7 @@ p {
 
 .banner-display:hover > a:before {
     visibility: visible;
-    opacity: 1
+    opacity: 2
 }
 
 .banner-display .banner-content {

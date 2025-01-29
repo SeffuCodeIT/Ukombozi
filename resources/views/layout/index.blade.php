@@ -66,6 +66,7 @@
                 <div class="header-right">
 
                     <div class="hidden sm:flex sm:items-center sm:ms-6">
+                        @if(Auth::check())
                         <!-- Teams Dropdown -->
                         @if (Laravel\Jetstream\Jetstream::hasTeamFeatures())
                             <div class="ms-3 relative">
@@ -169,56 +170,13 @@
                                 </x-slot>
                             </x-dropdown>
                         </div>
+                        @else
+
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('login') }}">{{ __('Login') }}</a>
+                            </li>
+                        @endif
                     </div>
-{{--                    <ul class="top-menu">--}}
-{{--                        <li>--}}
-{{--                            <a href="#">Log In</a>--}}
-{{--                            <ul>--}}
-{{--                                <li>--}}
-{{--                                    <div class="header-dropdown">--}}
-{{--                                        <a href="#">USD</a>--}}
-{{--                                        <div class="header-menu">--}}
-{{--                                            <ul>--}}
-{{--                                                <li><a href="#">Eur</a></li>--}}
-{{--                                                <li><a href="#">Usd</a></li>--}}
-{{--                                            </ul>--}}
-{{--                                        </div>--}}
-{{--                                        <!-- End .header-menu -->--}}
-{{--                                    </div>--}}
-{{--                                </li>--}}
-{{--                                <li>--}}
-{{--                                    <div class="header-dropdown">--}}
-{{--                                        <a href="#">English</a>--}}
-{{--                                        <div class="header-menu">--}}
-{{--                                            <ul>--}}
-{{--                                                <li><a href="#">English</a></li>--}}
-{{--                                                <li><a href="#">French</a></li>--}}
-{{--                                                <li><a href="#">Spanish</a></li>--}}
-{{--                                            </ul>--}}
-{{--                                        </div>--}}
-{{--                                        <!-- End .header-menu -->--}}
-{{--                                    </div>--}}
-{{--                                </li>--}}
-{{--                                <li>--}}
-{{--                                    @if (Route::has('login'))--}}
-{{--                                        <div class="sm:fixed sm:top-0 sm:right-0 p-6 text-right z-10 mr-5">--}}
-{{--                                            @auth--}}
-{{--                                                <a href="{{ url('/dashboard') }}" class="font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">{{ Auth::user()->name }}</a>--}}
-
-{{--                                            @else--}}
-{{--                                                <a href="{{ route('login') }}" class="font-semibold text-white hover:text-black dark:text-gray-400 dark:hover:text-black focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Log in</a>--}}
-
-{{--                                                @if (Route::has('register'))--}}
-{{--                                                    <a href="{{ route('register') }}" class="ml-4 font-semibold text-white hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Register</a>--}}
-{{--                                                @endif--}}
-{{--                                            @endauth--}}
-{{--                                        </div>--}}
-{{--                                    @endif--}}
-{{--                                    <a href="{{url("/login")}}" data-toggle="modal">Sign in / Sign up</a></li>--}}
-{{--                            </ul>--}}
-{{--                        </li>--}}
-{{--                    </ul>--}}
-                    <!-- End .top-menu -->
                 </div>
                 <!-- End .header-right -->
 
@@ -278,6 +236,7 @@
                     </div>
                     <!-- End .compare-dropdown -->
 
+                    @if(Auth::check())
                     <?php
                         $user = \Illuminate\Support\Facades\Auth::user();
                         $cartItems = \App\Models\Cart::where('phone', $user->phone)->with('book')->get();
@@ -351,6 +310,10 @@
                         <!-- End .dropdown-menu -->
                     </div>
                     <!-- End .cart-dropdown -->
+                @else
+                    <p>no productts in cart</p>
+
+                @endif
                 </div>
                 <!-- End .header-right -->
             </div>
