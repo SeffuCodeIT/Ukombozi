@@ -9,9 +9,178 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
+
 
 class BooksController extends Controller
 {
+
+    public function getToken()
+    {
+        $response = Http::post('https://www.members.ukombozilibrary.org/api/token/', [
+            'username' => env('UKOMBOZI_CLIENT_ID'),
+            'password' => env('UKOMBOZI_CLIENT_SECRET'),
+            'grant_type' => 'client_credentials',
+        ]);
+
+        if ($response->successful()) {
+            return $response->json(); // Returns access_token and refresh_token
+        }
+
+        // Capture and return error details for debugging
+        return response()->json([
+            'error' => 'Failed to get token',
+            'status' => $response->status(),
+            'message' => $response->json() ?? $response->body() // Get error message if available
+        ], $response->status());
+    }
+
+
+    public function getBooks()
+    {
+        $tokenResponse = $this->getToken();
+
+        if (!isset($tokenResponse['access'])) {
+            return response()->json(['error' => 'Failed to retrieve access token'], 401);
+        }
+
+        $accessToken = $tokenResponse['access'];
+        $apiUrl = 'https://www.members.ukombozilibrary.org/api/books/'; // First page URL
+        $totalBooks = 0;
+
+        while ($apiUrl) { // Loop until no more pages exist
+            $response = Http::withToken($accessToken)->get($apiUrl);
+
+            if (!$response->successful()) {
+                return response()->json([
+                    'error' => 'Failed to fetch books',
+                    'status' => $response->status(),
+                    'message' => $response->json() ?? $response->body()
+                ], $response->status());
+            }
+
+            $data = $response->json();
+
+            // Debug: Log API response structure
+            \Log::info('API Response:', $data);
+
+            $books = $data['results'] ?? $data; // Adjust if books are inside 'results'
+
+            if (!is_array($books)) {
+                return response()->json(['error' => 'Unexpected API response format'], 500);
+            }
+
+            foreach ($books as $book) {
+                $publicationYear = $book['publication_year'] ?? null;
+                $printDate = $publicationYear ? "{$publicationYear}-01-01" : null;
+
+                // Extract category ID from genre URL
+                $category = null;
+                if (!empty($book['genre']) && is_array($book['genre'])) {
+                    $categoryUrl = $book['genre'][0] ?? null;
+                    if ($categoryUrl) {
+                        $categoryParts = explode('/', rtrim($categoryUrl, '/'));
+                        $category = end($categoryParts);
+                        $category = is_numeric($category) ? (int)$category : null;
+                    }
+                }
+
+                // Insert into database
+                Books::create([
+                    'title' => $book['title'],
+                    'author_name' => $book['author'],
+                    's_author_name' => $book['editor'] ?? '',
+                    'print_date' => $printDate,
+                    'book_summary' => $book['summary'] ?? '',
+                    'book_price' => $book['price'] ?? 0,
+                    'stock_quantity' => 10,
+                    'cover_pic' => $book['cover_image'] ?? $book['cover_url'] ?? '',
+                    'publisher' => $book['publisher'] ?? '',
+                    'category' => $category,
+                    'status' => 1,
+                    'seo' => str_slug($book['title']),
+                ]);
+
+                $totalBooks++;
+            }
+
+            // Update URL for next page
+            $apiUrl = $data['next'] ?? null; // Check if 'next' exists in API response
+
+            // Debug: Log pagination info
+            \Log::info("Next Page URL: " . ($apiUrl ?? 'No more pages'));
+        }
+
+        return response()->json(['message' => "Books populated successfully! Total books: $totalBooks"]);
+    }
+
+
+    public function getBooksCount()
+    {
+        $tokenResponse = $this->getToken();
+
+        if (!isset($tokenResponse['access'])) {
+            return response()->json(['error' => 'Failed to retrieve access token'], 401);
+        }
+
+        $accessToken = $tokenResponse['access'];
+
+
+        $url = "https://www.members.ukombozilibrary.org/api/books/";
+
+        $response = Http::withToken($accessToken)->get($url);
+
+        if ($response->successful()) {
+            $books = $response->json();
+            return count($books); // Return total number of books
+        }
+
+        \Log::error('Failed to fetch books', ['response' => $response->body()]);
+        return "Failed to fetch books.";
+    }
+
+
+    public function updateBookCovers()
+    {
+        // Get books with missing cover_pic
+        $books = Books::whereNull('cover_pic')->orWhere('cover_pic', '')->get();
+
+        $tokenResponse = $this->getToken();
+
+        if (!isset($tokenResponse['access'])) {
+            return response()->json(['error' => 'Failed to retrieve access token'], 401);
+        }
+
+        $accessToken = $tokenResponse['access'];
+
+
+        foreach ($books as $book) {
+            Log::info("Updating book: {$book->id}"); // Log progress
+
+            $response = Http::withToken($accessToken)->timeout(10)->get("https://www.members.ukombozilibrary.org/api/books/{$book->id}/");
+
+            if (!$response->successful()) {
+                Log::warning("Failed to fetch book: {$book->id}");
+                continue; // Skip this book if the API call fails
+            }
+
+            $bookData = $response->json();
+            $coverPic = $bookData['cover_image'] ?? $bookData['cover_url'] ?? null;
+
+            if ($coverPic) {
+                $book->cover_pic = $coverPic;
+                $book->save();
+                Log::info("Cover updated for book: {$book->id}");
+            }
+        }
+
+        return response()->json(['message' => 'Book covers updated successfully']);
+    }
+
+
+
+
     /**
      * Display a listing of the resource.
      */

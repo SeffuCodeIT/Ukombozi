@@ -31,6 +31,10 @@ Route::any('cart/update', [\App\Http\Controllers\BooksController::class, 'update
 Route::any('/checkout', [\App\Http\Controllers\BooksController::class, 'checkout'])->name('checkout');
 //Route::post('/payment', [\App\Http\Controllers\BooksController::class, 'payment'])->name('payment');
 Route::any('/payment', [\App\Http\Controllers\PaymentController::class, 'stkPush'])->name('stkPush');
+Route::any('/getToken', [\App\Http\Controllers\BooksController::class, 'getToken'])->name('getToken');
+Route::any('/getBooks', [\App\Http\Controllers\BooksController::class, 'getBooks'])->name('getBooks');
+Route::any('/getBooksCount', [\App\Http\Controllers\BooksController::class, 'getBooksCount'])->name('getBooksCount');
+Route::any('/updateBookCovers', [\App\Http\Controllers\BooksController::class, 'updateBookCovers'])->name('updateBookCovers');
 //Route::any('/mpesa/callback', [\App\Http\Controllers\PaymentController::class, 'checkStkPushStatus'])->name('checkStkPushStatus');
 // routes/web.php
 

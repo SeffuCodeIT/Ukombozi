@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Orders;
 use App\Models\Payment;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -61,46 +62,60 @@ class   PaymentController extends Controller
         $transactionData = $payment->getTransactionStatus($request);
 
         if (isset($transactionData['status']) && $transactionData['status'] === '200') {
-            // Ensure the payment status is completed
+            // Ensure payment was completed successfully
             if ($transactionData['payment_status_description'] === 'Completed') {
-                // Save the main order details
-                $order = new Order();
-                $order->payment_method = $transactionData['payment_method'];
-                $order->amount = $transactionData['amount'];
-                $order->confirmation_code = $transactionData['confirmation_code'];
-                $order->order_tracking_id = $transactionData['order_tracking_id'];
-                $order->payment_status = $transactionData['payment_status_description'];
-                $order->currency = $transactionData['currency'];
-                $order->user_id = auth()->id(); // Assuming user is authenticated
-                $order->delivery_method = $request->input('delivery_method'); // 'pickup' or 'delivery'
-                $order->delivery_cost = $request->input('delivery_cost', 0); // Additional delivery cost
-                $order->delivery_address = $request->input('delivery_address', null); // Delivery address
-                $order->notes = $request->input('notes', ''); // Optional notes
-                $order->save();
+                // Save the order in the database
+                Orders::create([
+                    'first_name' => $request->input('first_name'),
+                    'country' => $request->input('country'),
+                    'county' => $request->input('county'),
+                    'constituency' => $request->input('constituency'),
+                    'street_address' => $request->input('street_address'),
+                    'landmark' => $request->input('landmark', null),
+                    'phone' => $request->input('phone'),
+                    'email' => $request->input('email'),
+                    'total' => $transactionData['amount'], // Marked as "amount" in API response
+                    'product_id' => $request->input('product_id'),
+                    'product_qty' => $request->input('product_qty'),
+                    'shipping_method' => $request->input('shipping_method'), // 0 = Pickup, 1 = Delivery
+                    'payment_status' => $transactionData['payment_status_description'],
+                    'payment_id' => $transactionData['order_tracking_id'],
+                    'confirmation_code' => $transactionData['confirmation_code'],
+                    'account_no' => $transactionData['account_no'] ?? null, // Account number used
+                    'failure_reason' => null, // No failure reason since it's successful
+                ]);
 
-                // Save each product from the cart to `order_items`
-                foreach ($request->input('cart') as $cartItem) {
-                    $orderItem = new OrderItem(); // Assuming you have an `OrderItem` model
-                    $orderItem->order_id = $order->id;
-                    $orderItem->product_id = $cartItem['product_id'];
-                    $orderItem->product_name = $cartItem['product_name'];
-                    $orderItem->quantity = $cartItem['quantity'];
-                    $orderItem->price = $cartItem['price']; // Per item price
-                    $orderItem->subtotal = $cartItem['quantity'] * $cartItem['price'];
-                    $orderItem->save();
-                }
-
-                // Redirect user to the success page
                 return redirect()->route('order.success')->with('message', 'Payment successful!');
             } else {
                 // Handle unsuccessful payments
+                Orders::create([
+                    'first_name' => $request->input('first_name'),
+                    'country' => $request->input('country'),
+                    'county' => $request->input('county'),
+                    'constituency' => $request->input('constituency'),
+                    'street_address' => $request->input('street_address'),
+                    'landmark' => $request->input('landmark', null),
+                    'phone' => $request->input('phone'),
+                    'email' => $request->input('email'),
+                    'total' => $transactionData['amount'], // Amount attempted
+                    'product_id' => $request->input('product_id'),
+                    'product_qty' => $request->input('product_qty'),
+                    'shipping_method' => $request->input('shipping_method'), // 0 = Pickup, 1 = Delivery
+                    'payment_status' => $transactionData['payment_status_description'],
+                    'payment_id' => $transactionData['order_tracking_id'],
+                    'confirmation_code' => null, // No confirmation since it failed
+                    'account_no' => $transactionData['account_no'] ?? null, // Account number used
+                    'failure_reason' => $transactionData['message'] ?? 'Payment failed',
+                ]);
+
                 return redirect()->route('order.failure')->with('error', 'Payment not completed.');
             }
         } else {
             // Handle failed API calls
-            return redirect()->route('order.failure')->with('error', $transactionData['message'] ?? 'Failed to process the payment.');
+            return redirect()->route('order.failure')->with('error', 'Failed to process the payment.');
         }
     }
+
 
 
     public function refundRequest()

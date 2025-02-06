@@ -85,18 +85,17 @@
                             </div><!-- End .toolbox-right -->
                         </div><!-- End .toolbox -->
 
+                        <div class="products mb-3">
+                            <div class="row justify-content-center">
                         @foreach($product as $products)
 
-                            <div class="container">
-{{--                                <h2 class="title text-center mb-3">Our Catalogue</h2><!-- End .title -->--}}
 
-                                <div class="row">
                                     <div class="col-6 col-md-4 col-lg-4">
-                                        <div class="product text-center">
+                                        <div class="product product-7 text-center">
                                             <figure class="product-media">
                                                 <span class="product-label label-sale">30% off</span>
                                                 <a href="product.html">
-                                                    <img src="{{asset("book-pics/".$products->cover_pic)}}" alt="Product image" class="product-image">
+                                                    <img src="{{$products->cover_pic}}" alt="Product image" class="product-image">
                                                 </a>
 
                                                 <div class="product-action">
@@ -108,19 +107,13 @@
 
                                             <div class="product-body">
                                                 <div class="product-cat">
-                                                    <a href="#">{{ $products->categories->category_title}}</a>
+{{--                                                    <a href="#">{{ $products->categories->category_title}}</a>--}}
                                                 </div><!-- End .product-cat -->
                                                 <h3 class="product-title"><a href="product.html">{{$products->title}}</a></h3><!-- End .product-title -->
                                                 <div class="product-price">
                                                     <span class="new-price">Kshs {{number_format($products->book_price)}}</span>
                                                     <span class="old-price">Kshs {{number_format($products->book_price*1.3)}}</span>
                                                 </div><!-- End .product-price -->
-{{--                                                <div class="product-size">--}}
-{{--                                                    <a href="#" class="disabled" title="Small">S</a>--}}
-{{--                                                    <a href="#" title="Medium">M</a>--}}
-{{--                                                    <a href="#" class="active" title="Large">L</a>--}}
-{{--                                                    <a href="#" title="Extra Large">XL</a>--}}
-{{--                                                </div><!-- End .product-size -->--}}
                                                 <div class="ratings-container">
                                                     <div class="ratings">
                                                         <div class="ratings-val" style="width: 40%;"></div><!-- End .ratings-val -->
@@ -130,18 +123,19 @@
 
                                                 <div class="product-nav product-nav-thumbs">
                                                     <a href="#" class="active">
-                                                        <img src="{{asset("book-pics/".$products->cover_pic)}}" alt="product desc">
+                                                        <img src="{{$products->cover_pic}}" alt="product desc">
                                                     </a>
                                                 </div><!-- End .product-nav -->
                                             </div><!-- End .product-body -->
                                         </div><!-- End .product -->
                                     </div><!-- End .col-sm-6 col-lg-4 -->
 
-                                </div><!-- End .row -->
 
-
-                            </div><!-- End .container -->
                         @endforeach
+                            </div><!-- End .row -->
+
+
+                        </div><!-- End .container -->
                         <nav aria-label="Page navigation">
                             <ul class="pagination justify-content-center">
                                 <li class="page-item disabled">
@@ -245,31 +239,6 @@
                                     </div><!-- End .widget-body -->
                                 </div><!-- End .collapse -->
                             </div><!-- End .widget -->
-
-
-{{--                            <div class="widget widget-collapsible">--}}
-{{--                                <h3 class="widget-title">--}}
-{{--                                    <a data-toggle="collapse" href="#widget-3" role="button" aria-expanded="true" aria-controls="widget-3">--}}
-{{--                                        Colour--}}
-{{--                                    </a>--}}
-{{--                                </h3><!-- End .widget-title -->--}}
-
-{{--                                <div class="collapse show" id="widget-3">--}}
-{{--                                    <div class="widget-body">--}}
-{{--                                        <div class="filter-colors">--}}
-{{--                                            <a href="#" style="background: #b87145;"><span class="sr-only">Color Name</span></a>--}}
-{{--                                            <a href="#" style="background: #f0c04a;"><span class="sr-only">Color Name</span></a>--}}
-{{--                                            <a href="#" style="background: #333333;"><span class="sr-only">Color Name</span></a>--}}
-{{--                                            <a href="#" class="selected" style="background: #cc3333;"><span class="sr-only">Color Name</span></a>--}}
-{{--                                            <a href="#" style="background: #3399cc;"><span class="sr-only">Color Name</span></a>--}}
-{{--                                            <a href="#" style="background: #669933;"><span class="sr-only">Color Name</span></a>--}}
-{{--                                            <a href="#" style="background: #f2719c;"><span class="sr-only">Color Name</span></a>--}}
-{{--                                            <a href="#" style="background: #ebebeb;"><span class="sr-only">Color Name</span></a>--}}
-{{--                                        </div><!-- End .filter-colors -->--}}
-{{--                                    </div><!-- End .widget-body -->--}}
-{{--                                </div><!-- End .collapse -->--}}
-{{--                            </div><!-- End .widget -->--}}
-
 
                         </div><!-- End .sidebar sidebar-shop -->
                     </aside><!-- End .col-lg-3 -->

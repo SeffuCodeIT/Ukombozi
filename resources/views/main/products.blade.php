@@ -32,7 +32,7 @@
                             <div class="product-gallery product-gallery-vertical">
                                 <div class="row">
                                     <figure class="product-main-image">
-                                        <img id="product-zoom" src="{{asset("book-pics/". $products->cover_pic)}}" data-zoom-image="assets/images/products/single/1-big.jpg" alt="product image">
+                                        <img id="product-zoom" src="{{$products->cover_pic}}" data-zoom-image="assets/images/products/single/1-big.jpg" alt="product image">
 
                                         <a href="#" id="btn-product-gallery" class="btn-product-gallery">
                                             <i class="icon-arrows"></i>
@@ -41,7 +41,7 @@
 
                                     <div id="product-zoom-gallery" class="product-image-gallery">
                                         <a class="product-gallery-item active" href="#" data-image="assets/images/products/single/1.jpg" data-zoom-image="assets/images/products/single/1-big.jpg">
-                                            <img src="{{asset("book-pics/". $products->cover_pic)}}" alt="product side">
+                                            <img src="{{$products->cover_pic}}" alt="product side">
                                         </a>
 
 {{--                                        <a class="product-gallery-item" href="#" data-image="assets/images/products/single/2.jpg" data-zoom-image="assets/images/products/single/2-big.jpg">--}}
@@ -84,7 +84,7 @@
 
                                     <div class="product-nav product-nav-thumbs">
                                         <a href="#" class="active">
-                                            <img src="{{asset("book-pics/". $products->cover_pic)}}" alt="product desc">
+                                            <img src="{{$products->cover_pic}}" alt="product desc">
                                         </a>
                                     </div><!-- End .product-nav -->
                                 </div><!-- End .details-filter-row -->
@@ -112,7 +112,7 @@
                             <div class="product-details-footer">
                                 <div class="product-cat">
                                     <span>Category:</span>
-                                    <a href="#">{{$products->categories->category_slug}}</a>
+{{--                                    <a href="#">{{$products->categories->category_slug}}</a>--}}
                                 </div><!-- End .product-cat -->
 
                                 <div class="social-icons social-icons-sm">

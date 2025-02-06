@@ -64,7 +64,7 @@ class Payment extends Model
     }
 
     public function registerPesapalIPN(){ //Callback URL
-        $url = "https://202c-154-159-252-147.ngrok-free.app/api/pesapalIPN";
+        $url = "https://b427-2c0f-fe38-2333-a760-5e79-4e8f-3e86-4a4b.ngrok-free.app/api/pesapalIPN";
         if(env('PESAPAL_APP_ENVIROMENT') == 'sandbox'){
             $ipnRegistrationUrl = "https://cybqa.pesapal.com/pesapalv3/api/URLSetup/RegisterIPN";
         }elseif(env('PESAPAL_APP_ENVIROMENT') == 'live'){
@@ -124,7 +124,7 @@ class Payment extends Model
         $merchantreference = rand(1, 1000000000000000000);
         $phone = $data["phone"];
         $amount = $data['total'];
-        $callbackurl = "https://202c-154-159-252-147.ngrok-free.app/success";
+        $callbackurl = "https://b427-2c0f-fe38-2333-a760-5e79-4e8f-3e86-4a4b.ngrok-free.app/success";
         $branch = "Ukombozi Library";
         $first_name = $data['first_name'];
         $middle_name = "";
